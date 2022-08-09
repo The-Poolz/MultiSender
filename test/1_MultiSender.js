@@ -1,15 +1,35 @@
 const MultiSender = artifacts.require("MultiSender")
 const TestToken = artifacts.require("ERC20Token")
+const { assert } = require("chai")
+const BigNumber = require("bignumber.js")
 
 contract("MultiSender", (accounts) => {
-    let instance, Token
+    let instance, token
 
     before(async () => {
         instance = await MultiSender.new()
-        Token = await TestToken.new('TestToken', 'TEST')
+        token = await TestToken.new("TestToken", "TEST")
     })
-    
-    it('test', async () => {
 
+    it("multi eth transfer", async () => {
+        const eth = web3.utils.toWei("1", "ether")
+        const amounts = [eth, eth, eth, eth, eth, eth, eth, eth, eth, eth]
+        const defaultBal = await web3.eth.getBalance(accounts[1])
+        await instance.MultiSendEth(accounts, amounts, { value: web3.utils.toWei("10", "ether") })
+        for (let i = 1; i < accounts.length; i++) {
+            let bal = await web3.eth.getBalance(accounts[i])
+            assert.equal(bal.toString(), BigNumber.sum(defaultBal, eth).toString(), "invalid balance!")
+        }
+    })
+
+    it("multi erc20 transfer", async () => {
+        const amount = "10000"
+        const amounts = [amount, amount, amount, amount, amount, amount, amount, amount, amount, amount]
+        await token.approve(instance.address, amounts.reduce((a, b) => a + b, 0))
+        await instance.MultiSendERC20(token.address, accounts, amounts)
+        for (let i = 1; i < accounts.length; i++) {
+            let bal = await token.balanceOf(accounts[i])
+            assert.equal(bal.toString(), amount, "invalid balance!")
+        }
     })
 })
