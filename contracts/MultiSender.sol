@@ -63,15 +63,16 @@ contract MultiSender is MultiManageable {
     }
 
     function _checkFee() internal returns (bool) {
-        if (
-            WhiteListAddress != address(0) &&
+        if (WhiteListAddress != address(0)) {
             IWhiteList(WhiteListAddress).Check(msg.sender, WhiteListId) > 0
-        ) {
-            PayFee(Fee);
+                ? IWhiteList(WhiteListAddress).Register(
+                    msg.sender,
+                    WhiteListId,
+                    Fee
+                )
+                : PayFee(Fee);
             return true;
         }
-        if (WhiteListAddress != address(0))
-            IWhiteList(WhiteListAddress).Register(msg.sender, WhiteListId, Fee);
         return false;
     }
 
