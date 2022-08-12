@@ -23,9 +23,9 @@ contract("MultiSender", (accounts) => {
     })
 
     it("multi erc20 transfer", async () => {
-        const amount = "10000"
+        const amount = 1000
         const amounts = [amount, amount, amount, amount, amount, amount, amount, amount, amount, amount]
-        await token.approve(instance.address, amounts.reduce((a, b) => a + b, 0))
+        await token.approve(instance.address, 1000 * 10)
         await instance.MultiSendERC20(token.address, accounts, amounts)
         for (let i = 1; i < accounts.length; i++) {
             let bal = await token.balanceOf(accounts[i])

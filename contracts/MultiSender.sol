@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "poolz-helper-v2/contracts/ERC20Helper.sol";
-import "poolz-helper-v2/contracts/ETHHelper.sol";
 import "poolz-helper-v2/contracts/Array.sol";
 import "./MultiManageable.sol";
 
@@ -34,10 +32,10 @@ contract MultiSender is MultiManageable {
         checkArrLength(_users.length, _balances.length)
         checkUserLimit(_users.length)
     {
-        uint256 value = _calcValue();
+        uint256 value = msg.value - CalcFee();
         require(
             value >= Array.getArraySum(_balances),
-            "Not enough value sended!"
+            "Insufficient eth value sent!"
         );
         for (uint256 i; i < _users.length; i++) {
             _users[i].transfer(_balances[i]);
@@ -56,27 +54,27 @@ contract MultiSender is MultiManageable {
         checkUserLimit(_users.length)
     {
         require(_token != address(0), "Invalid token address");
-        require(msg.value >= Fee, "Invalid fee amount");
+        PayFee(CalcFee());
         for (uint256 i; i < _users.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
     }
 
-    function _checkFee() internal returns (bool) {
-        if (WhiteListAddress != address(0)) {
-            IWhiteList(WhiteListAddress).Check(msg.sender, WhiteListId) > 0
-                ? IWhiteList(WhiteListAddress).Register(
-                    msg.sender,
-                    WhiteListId,
-                    Fee
-                )
-                : PayFee(Fee);
-            return true;
+    function CalcFee() internal returns (uint256) {
+        if (WhiteListAddress == address(0)) return 0;
+        uint256 discount = IWhiteList(WhiteListAddress).Check(
+            msg.sender,
+            WhiteListId
+        );
+        if (discount < Fee) {
+            IWhiteList(WhiteListAddress).Register(
+                msg.sender,
+                WhiteListId,
+                discount
+            );
+            return Fee - discount;
         }
-        return false;
-    }
-
-    function _calcValue() internal returns (uint256) {
-        return _checkFee() ? msg.value - Fee : msg.value;
+        IWhiteList(WhiteListAddress).Register(msg.sender, WhiteListId, Fee);
+        return 0;
     }
 }
