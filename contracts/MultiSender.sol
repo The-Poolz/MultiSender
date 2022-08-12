@@ -32,7 +32,7 @@ contract MultiSender is MultiManageable {
         checkArrLength(_users.length, _balances.length)
         checkUserLimit(_users.length)
     {
-        uint256 value = msg.value - CalcFee();
+        uint256 value = msg.value - _calcFee();
         require(
             value >= Array.getArraySum(_balances),
             "Insufficient eth value sent!"
@@ -54,13 +54,13 @@ contract MultiSender is MultiManageable {
         checkUserLimit(_users.length)
     {
         require(_token != address(0), "Invalid token address");
-        PayFee(CalcFee());
+        PayFee(_calcFee());
         for (uint256 i; i < _users.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
     }
 
-    function CalcFee() internal returns (uint256) {
+    function _calcFee() internal returns (uint256) {
         if (WhiteListAddress == address(0)) return 0;
         uint256 discount = IWhiteList(WhiteListAddress).Check(
             msg.sender,
