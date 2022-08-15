@@ -32,7 +32,9 @@ contract MultiSender is MultiManageable {
         checkArrLength(_users.length, _balances.length)
         checkUserLimit(_users.length)
     {
-        uint256 value = msg.value - _calcFee();
+        uint fee = _calcFee();
+        PayFee(fee);
+        uint256 value = msg.value - fee;
         require(
             value >= Array.getArraySum(_balances),
             "Insufficient eth value sent!"
