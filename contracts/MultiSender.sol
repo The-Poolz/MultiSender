@@ -6,7 +6,7 @@ import "poolz-helper-v2/contracts/Array.sol";
 import "./MultiManageable.sol";
 
 /// @title main multi transfer settings
-/// @author The-Poolz contracts team
+/// @author The-Poolz contract team
 contract MultiSender is MultiManageable {
     constructor() {
         UserLimit = 500;
@@ -35,7 +35,7 @@ contract MultiSender is MultiManageable {
         uint256 fee = _calcFee();
         uint256 value = msg.value;
         PayFee(fee);
-        if (FeeToken == address(0)) value -= fee;
+        if (fee > 0 && FeeToken == address(0)) value -= fee;
         require(
             value >= Array.getArraySum(_balances),
             "Insufficient eth value sent!"
