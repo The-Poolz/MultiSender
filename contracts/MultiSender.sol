@@ -8,6 +8,13 @@ import "./MultiManageable.sol";
 /// @title main multi transfer settings
 /// @author The-Poolz contract team
 contract MultiSender is MultiManageable {
+    event MultiTransferredERC20(
+        address token,
+        uint256 userCount,
+        uint256 totalAmount
+    );
+    event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
+
     constructor() {
         UserLimit = 500;
     }
@@ -36,13 +43,12 @@ contract MultiSender is MultiManageable {
         uint256 value = msg.value;
         PayFee(fee);
         if (fee > 0 && FeeToken == address(0)) value -= fee;
-        require(
-            value >= Array.getArraySum(_balances),
-            "Insufficient eth value sent!"
-        );
+        uint256 amount = Array.getArraySum(_balances);
+        require(value >= amount, "Insufficient eth value sent!");
         for (uint256 i; i < _users.length; i++) {
             _users[i].transfer(_balances[i]);
         }
+        emit MultiTransferredETH(_users.length, amount);
     }
 
     function MultiSendERC20(
@@ -61,6 +67,11 @@ contract MultiSender is MultiManageable {
         for (uint256 i; i < _users.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
+        emit MultiTransferredERC20(
+            _token,
+            _users.length,
+            Array.getArraySum(_balances)
+        );
     }
 
     function _calcFee() internal returns (uint256) {
