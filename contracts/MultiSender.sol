@@ -53,7 +53,7 @@ contract MultiSender is MultiManageable {
 
     function MultiSendERC20(
         address _token,
-        address payable[] memory _users,
+        address[] memory _users,
         uint256[] calldata _balances
     )
         public
