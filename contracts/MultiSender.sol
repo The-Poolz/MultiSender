@@ -45,6 +45,9 @@ contract MultiSender is MultiManageable {
         if (fee > 0 && FeeToken == address(0)) value -= fee;
         uint256 amount = Array.getArraySum(_balances);
         require(value >= amount, "Insufficient eth value sent!");
+        if (value > amount) {
+            pendingWithdrawals[msg.sender] += value - amount;
+        }
         for (uint256 i; i < _users.length; i++) {
             _users[i].transfer(_balances[i]);
         }
