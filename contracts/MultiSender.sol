@@ -42,8 +42,8 @@ contract MultiSender is MultiManageable {
         payable
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
-        checkUserLimit(_users.length)
         notZeroLength(_users.length)
+        checkUserLimit(_users.length)
     {
         uint256 fee = _calcFee();
         uint256 value = msg.value;
