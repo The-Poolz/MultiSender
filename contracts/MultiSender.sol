@@ -24,6 +24,11 @@ contract MultiSender is MultiManageable {
         _;
     }
 
+    modifier notZeroLength(uint256 _length) {
+        require(_length != 0, "array can't be zero length");
+        _;
+    }
+
     modifier checkUserLimit(uint256 _userLength) {
         require(UserLimit >= _userLength, "Invalid user limit");
         _;
@@ -38,6 +43,7 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
         checkUserLimit(_users.length)
+        notZeroLength(_users.length)
     {
         uint256 fee = _calcFee();
         uint256 value = msg.value;
@@ -59,6 +65,7 @@ contract MultiSender is MultiManageable {
         public
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
+        notZeroLength(_users.length)
         checkUserLimit(_users.length)
     {
         require(_token != address(0), "Invalid token address");
