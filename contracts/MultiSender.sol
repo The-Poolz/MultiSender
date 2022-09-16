@@ -63,6 +63,7 @@ contract MultiSender is MultiManageable {
         uint256[] calldata _balances
     )
         public
+        payable
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
         notZeroLength(_users.length)
