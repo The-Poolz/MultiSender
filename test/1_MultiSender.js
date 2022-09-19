@@ -72,6 +72,18 @@ contract("MultiSender", (accounts) => {
                 "Insufficient eth value sent!"
             )
         })
+
+        it("should revert zero length array", async () => {
+            await truffleAssert.reverts(
+                instance.MultiSendEth([], [], { value: amount * 10 }),
+                "array can't be zero length"
+            )
+            await token.approve(instance.address, amount * 10)
+            await truffleAssert.reverts(
+                instance.MultiSendERC20(token.address, [], []),
+                "array can't be zero length"
+            )
+        })
     })
 
     describe("MultiManageable", () => {
@@ -109,7 +121,7 @@ contract("MultiSender", (accounts) => {
                 instance.MultiSendEth(accounts, amounts, { value: amount * 10 }),
                 "Pausable: paused"
             )
-            await token.approve(instance.address, 1000 * 10)
+            await token.approve(instance.address, amount * 10)
             await truffleAssert.reverts(instance.MultiSendERC20(token.address, accounts, amounts), "Pausable: paused")
             await instance.Unpause()
             await instance.MultiSendEth(accounts, amounts, { value: amount * 10 })
