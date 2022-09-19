@@ -50,10 +50,7 @@ contract MultiSender is MultiManageable {
         PayFee(fee);
         if (fee > 0 && FeeToken == address(0)) value -= fee;
         uint256 amount = Array.getArraySum(_balances);
-        require(value >= amount, "Insufficient eth value sent!");
-        if (value > amount) {
-            pendingWithdrawals[msg.sender] += value - amount;
-        }
+        require(value == amount, "Insufficient eth value sent!");
         for (uint256 i; i < _users.length; i++) {
             _users[i].transfer(_balances[i]);
         }
@@ -73,7 +70,11 @@ contract MultiSender is MultiManageable {
         checkUserLimit(_users.length)
     {
         require(_token != address(0), "Invalid token address");
-        PayFee(_calcFee());
+        uint256 fee = _calcFee();
+        PayFee(fee);
+        if (FeeToken == address(0)) {
+            require(msg.value == fee, "Insufficient eth value sent!");
+        }
         for (uint256 i; i < _users.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
