@@ -69,7 +69,7 @@ contract("MultiSender", (accounts) => {
         it("insufficient eth value sent", async () => {
             await truffleAssert.reverts(
                 instance.MultiSendEth(accounts, amounts, { value: amount * 9 }),
-                "Insufficient eth value sent!"
+                "Reqired Amount=" + amount * 10 + " Fee=0"
             )
         })
 
