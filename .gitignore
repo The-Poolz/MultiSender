@@ -1,9 +1,17 @@
+# Created by https://www.toptal.com/developers/gitignore/api/soliditytruffle
+# Edit at https://www.toptal.com/developers/gitignore?templates=soliditytruffle
+
+### SolidityTruffle ###
 # depedencies
 node_modules
 
 # testing
 coverage
 coverage.json
+cache
+artifacts
+typechain
+typechain-types
 
 # production
 build
@@ -23,3 +31,8 @@ blockchain/history
 .tern-port
 yarn.lock
 package-lock.json
+gasReporterOutput.json
+gas-report.txt
+md_gas_report.txt
+
+# End of https://www.toptal.com/developers/gitignore/api/soliditytruffle

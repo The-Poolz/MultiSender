@@ -96,6 +96,11 @@ module.exports = {
        evmVersion: "byzantium"
       }
     }
+  },
+
+  solidityLog: {
+    displayPrefix: ' :', // defaults to ""
+    preventConsoleLogMigration: true, // defaults to false
   }
 
   // Truffle DB is currently disabled by default; to enable it, change enabled:
