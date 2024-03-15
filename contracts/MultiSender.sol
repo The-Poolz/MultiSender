@@ -14,7 +14,11 @@ contract MultiSender is MultiManageable {
         uint256 userCount,
         uint256 totalAmount
     );
+
     event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
+
+    error InvalidEthAmount(uint requiredAmount);
+    error FeeNotProvided(uint requiredFee);
 
     constructor() {
         UserLimit = 500;
@@ -51,15 +55,7 @@ contract MultiSender is MultiManageable {
         PayFee(fee);
         if (fee > 0 && FeeToken == address(0)) value -= fee;
         uint256 amount = Array.getArraySum(_balances);
-        require(
-            value == amount,
-            string.concat(
-                "Reqired Amount=",
-                Strings.toString(amount),
-                " Fee=",
-                Strings.toString(fee)
-            )
-        );
+        if(value != amount) revert InvalidEthAmount(amount + fee);
         for (uint256 i; i < _users.length; i++) {
             _users[i].transfer(_balances[i]);
         }
@@ -81,12 +77,7 @@ contract MultiSender is MultiManageable {
         require(_token != address(0), "Invalid token address");
         uint256 fee = _calcFee();
         PayFee(fee);
-        if (FeeToken == address(0)) {
-            require(
-                msg.value == fee,
-                string.concat("Reqired ETH fee=", Strings.toString(fee))
-            );
-        }
+        if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
         for (uint256 i; i < _users.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
