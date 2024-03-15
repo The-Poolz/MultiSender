@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { ERC20, MultiSender } from "../typechain-types";
+import { ERC20, MultiSender, OldMultiSender } from "../typechain-types";
 import { ethers } from "hardhat";
 
 const getRandomAddress = () => {
@@ -26,11 +26,13 @@ const getTotalofAmounts = (amounts: BigNumber[]) => {
 
 describe("MultiSender", () => {
   let multiSender: MultiSender;
+  let oldMultiSender: OldMultiSender;
   let token: ERC20;
   let accounts: Awaited<ReturnType<typeof ethers.getSigners>>;
 
   before(async () => {
     multiSender = await ethers.deployContract("MultiSender")
+    oldMultiSender = await ethers.deployContract("OldMultiSender")
     token = await ethers.deployContract("ERC20Token", ["TestToken", "TEST"])
     accounts = (await ethers.getSigners())
   });
@@ -41,9 +43,17 @@ describe("MultiSender", () => {
     const amounts = getRandomNumbersInRange(count, 1000, 100000);
     const total = getTotalofAmounts(amounts);
     await token.approve(multiSender.getAddress(), total.toFixed());
-    const tx = await multiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed())); 
+    await token.approve(oldMultiSender.getAddress(), total.toFixed());
+    const oldTx = await oldMultiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed()));
+    const oldTxReceipt = await oldTx.wait();
+    const tx = await multiSender.MultiSendERC20(token.getAddress(), total.toFixed(), addresses, amounts.map(a => a.toFixed())); 
     const txReceipt = await tx.wait();
-    console.log('MultiSendERC20 gas used: ', txReceipt?.gasUsed.toString());
+    const newGas = txReceipt?.gasUsed.toString();
+    const oldGas = oldTxReceipt?.gasUsed.toString();
+    const diff = new BigNumber(oldGas || 0).minus(new BigNumber(newGas || 0));
+    console.log('New MultiSendERC20 gas used: ', newGas);
+    console.log('Old MultiSendERC20 gas used: ', oldGas);
+    console.log("Difference= ", diff.toString());
   })
   it("should multisend to 100 addresses", async () => {
     const count = 100
@@ -51,37 +61,53 @@ describe("MultiSender", () => {
     const amounts = getRandomNumbersInRange(count, 1000, 100000);
     const total = getTotalofAmounts(amounts);
     await token.approve(multiSender.getAddress(), total.toFixed());
-    const tx = await multiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed())); 
+    await token.approve(oldMultiSender.getAddress(), total.toFixed());
+    const oldTx = await oldMultiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed()));
+    const oldTxReceipt = await oldTx.wait();
+    const tx = await multiSender.MultiSendERC20(token.getAddress(), total.toFixed(), addresses, amounts.map(a => a.toFixed())); 
     const txReceipt = await tx.wait();
-    console.log('MultiSendERC20 gas used: ', txReceipt?.gasUsed.toString());
+    const newGas = txReceipt?.gasUsed.toString();
+    const oldGas = oldTxReceipt?.gasUsed.toString();
+    const diff = new BigNumber(oldGas || 0).minus(new BigNumber(newGas || 0));
+    console.log('New MultiSendERC20 gas used: ', newGas);
+    console.log('Old MultiSendERC20 gas used: ', oldGas);
+    console.log("Difference= ", diff.toString());
   })
-  it("should multisend to 500 addresses", async () => {
-    const count = 500
-    const addresses = getRandomAddresses(count);
-    const amounts = getRandomNumbersInRange(count, 1000, 100000);
-    const total = getTotalofAmounts(amounts);
-    await token.approve(multiSender.getAddress(), total.toFixed());
-    const tx = await multiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed())); 
-    const txReceipt = await tx.wait();
-    console.log('MultiSendERC20 gas used: ', txReceipt?.gasUsed.toString());
-  })
-  // it("should multisend to 1000 addresses", async () => {
-  //   const count = 1000
+  // it("should multisend to 500 addresses", async () => {
+  //   const count = 500
   //   const addresses = getRandomAddresses(count);
   //   const amounts = getRandomNumbersInRange(count, 1000, 100000);
   //   const total = getTotalofAmounts(amounts);
   //   await token.approve(multiSender.getAddress(), total.toFixed());
-  //   const tx = await multiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed())); 
+  //   await token.approve(oldMultiSender.getAddress(), total.toFixed());
+  //   const tx = await multiSender.MultiSendERC20(token.getAddress(), total.toFixed(), addresses, amounts.map(a => a.toFixed())); 
+  //   const txReceipt = await tx.wait();
+  //   const oldTx = await oldMultiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed()));
+  //   const oldTxReceipt = await oldTx.wait();
+  //   const newGas = txReceipt?.gasUsed.toString();
+  //   const oldGas = oldTxReceipt?.gasUsed.toString();
+  //   const diff = new BigNumber(newGas || 0).minus(new BigNumber(oldGas || 0));
+  //   console.log('New MultiSendERC20 gas used: ', newGas);
+  //   console.log('Old MultiSendERC20 gas used: ', oldGas);
+  //   console.log("Difference= ", diff.toString());
+  // })
+  // it("should multisend to 100 addresses", async () => {
+  //   const count = 100
+  //   const addresses = getRandomAddresses(count);
+  //   const amounts = getRandomNumbersInRange(count, 1000, 100000);
+  //   const total = getTotalofAmounts(amounts);
+  //   await token.approve(multiSender.getAddress(), total.toFixed());
+  //   const tx = await multiSender.MultiSendERC20(token.getAddress(), total.toFixed(), addresses, amounts.map(a => a.toFixed())); 
   //   const txReceipt = await tx.wait();
   //   console.log('MultiSendERC20 gas used: ', txReceipt?.gasUsed.toString());
   // })
-  // it("should multisend to 10000 addresses", async () => {
-  //   const count = 10000
+  // it("should multisend to 500 addresses", async () => {
+  //   const count = 500
   //   const addresses = getRandomAddresses(count);
   //   const amounts = getRandomNumbersInRange(count, 1000, 100000);
   //   const total = getTotalofAmounts(amounts);
   //   await token.approve(multiSender.getAddress(), total.toFixed());
-  //   const tx = await multiSender.MultiSendERC20(token.getAddress(), addresses, amounts.map(a => a.toFixed())); 
+  //   const tx = await multiSender.MultiSendERC20(token.getAddress(), total.toFixed(), addresses, amounts.map(a => a.toFixed())); 
   //   const txReceipt = await tx.wait();
   //   console.log('MultiSendERC20 gas used: ', txReceipt?.gasUsed.toString());
   // })

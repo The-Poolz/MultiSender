@@ -8,7 +8,7 @@ import "./MultiManageable.sol";
 
 /// @title main multi transfer settings
 /// @author The-Poolz contract team
-contract MultiSender is MultiManageable {
+contract OldMultiSender is MultiManageable {
     event MultiTransferredERC20(
         address token,
         uint256 userCount,
@@ -64,7 +64,6 @@ contract MultiSender is MultiManageable {
 
     function MultiSendERC20(
         address _token,
-        uint256 _totalAmount,
         address[] memory _users,
         uint256[] calldata _balances
     )
@@ -79,18 +78,13 @@ contract MultiSender is MultiManageable {
         uint256 fee = _calcFee();
         PayFee(fee);
         if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
-        require(IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount), "Self Transfer failed");
         for (uint256 i; i < _users.length; i++) {
-            require(IERC20(_token).transfer(_users[i], _balances[i]), "Transfer failed");
-        }
-        uint256 remaining = IERC20(_token).balanceOf(address(this));
-        if(remaining != 0) {
-            require(IERC20(_token).transfer(msg.sender, remaining), "Return failed");
+            IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
         }
         emit MultiTransferredERC20(
             _token,
             _users.length,
-            _totalAmount
+            Array.getArraySum(_balances)
         );
     }
 

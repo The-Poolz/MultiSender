@@ -35,4 +35,6 @@ gasReporterOutput.json
 gas-report.txt
 md_gas_report.txt
 
+flat.sol
+
 # End of https://www.toptal.com/developers/gitignore/api/soliditytruffle
