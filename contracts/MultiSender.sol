@@ -20,10 +20,6 @@ contract MultiSender is MultiManageable {
     error InvalidEthAmount(uint requiredAmount);
     error FeeNotProvided(uint requiredFee);
 
-    constructor() {
-        UserLimit = 500;
-    }
-
     modifier checkArrLength(uint256 _userLength, uint256 _balancesLength) {
         require(_userLength == _balancesLength, "invalid input data!");
         _;
@@ -31,11 +27,6 @@ contract MultiSender is MultiManageable {
 
     modifier notZeroLength(uint256 _length) {
         require(_length != 0, "array can't be zero length");
-        _;
-    }
-
-    modifier checkUserLimit(uint256 _userLength) {
-        require(UserLimit >= _userLength, "Invalid user limit");
         _;
     }
 
@@ -48,7 +39,6 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
         notZeroLength(_users.length)
-        checkUserLimit(_users.length)
     {
         uint256 fee = _calcFee();
         uint256 value = msg.value;
@@ -73,7 +63,6 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         checkArrLength(_users.length, _balances.length)
         notZeroLength(_users.length)
-        checkUserLimit(_users.length)
     {
         require(_token != address(0), "Invalid token address");
         uint256 fee = _calcFee();

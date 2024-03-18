@@ -7,13 +7,8 @@ import "poolz-helper-v2/contracts/interfaces/IWhiteList.sol";
 
 /// @title all admin settings
 contract MultiManageable is FeeBaseHelper, Pausable {
-    uint256 public UserLimit;
     address public WhiteListAddress;
     uint256 public WhiteListId;
-
-    function setUserLimit(uint256 _userLimit) public onlyOwnerOrGov {
-        UserLimit = _userLimit;
-    }
 
     function setWhiteListAddress(address _whiteListAddr) public onlyOwnerOrGov {
         WhiteListAddress = _whiteListAddr;
