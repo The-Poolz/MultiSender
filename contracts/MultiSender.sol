@@ -19,10 +19,11 @@ contract MultiSender is MultiManageable {
 
     error InvalidEthAmount(uint requiredAmount);
     error FeeNotProvided(uint requiredFee);
+    error EthTransferFail();
 
-    modifier checkArrLength(uint256 _userLength, uint256 _balancesLength) {
-        require(_userLength == _balancesLength, "invalid input data!");
-        _;
+    struct MultiSendData {
+        address user;
+        uint amount;
     }
 
     modifier notZeroLength(uint256 _length) {
@@ -31,46 +32,42 @@ contract MultiSender is MultiManageable {
     }
 
     function MultiSendEth(
-        address payable[] calldata _users,
-        uint256[] calldata _balances
+        MultiSendData[] calldata _multiSendData
     )
         public
         payable
         whenNotPaused
-        checkArrLength(_users.length, _balances.length)
-        notZeroLength(_users.length)
+        notZeroLength(_multiSendData.length)
     {
         uint256 fee = _calcFee();
         uint256 value = msg.value;
         PayFee(fee);
         if (fee > 0 && FeeToken == address(0)) value -= fee;
-        uint256 amount = Array.getArraySum(_balances);
-        if(value != amount) revert InvalidEthAmount(amount + fee);
-        for (uint256 i; i < _users.length; i++) {
-            _users[i].transfer(_balances[i]);
+        for (uint256 i; i < _multiSendData.length; i++) {
+            value -= _multiSendData[i].amount;
+            (bool success, ) = _multiSendData[i].user.call{value: _multiSendData[i].amount}("");
+            if (!success) revert EthTransferFail();
         }
-        emit MultiTransferredETH(_users.length, amount);
+        emit MultiTransferredETH(_multiSendData.length, msg.value - fee);
     }
 
     function MultiSendERC20(
         address _token,
         uint256 _totalAmount,
-        address[] memory _users,
-        uint256[] calldata _balances
+        MultiSendData[] calldata _multiSendData
     )
         public
         payable
         whenNotPaused
-        checkArrLength(_users.length, _balances.length)
-        notZeroLength(_users.length)
+        notZeroLength(_multiSendData.length)
     {
         require(_token != address(0), "Invalid token address");
         uint256 fee = _calcFee();
         PayFee(fee);
         if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
-        for (uint256 i; i < _users.length; i++) {
-            IERC20(_token).transfer(_users[i], _balances[i]);
+        for (uint256 i; i < _multiSendData.length; i++) {
+            IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
         uint256 remaining = IERC20(_token).balanceOf(address(this));
         if(remaining != 0) {
@@ -78,7 +75,7 @@ contract MultiSender is MultiManageable {
         }
         emit MultiTransferredERC20(
             _token,
-            _users.length,
+            _multiSendData.length,
             _totalAmount
         );
     }
