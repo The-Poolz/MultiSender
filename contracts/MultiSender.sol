@@ -83,35 +83,6 @@ contract MultiSender is MultiManageable {
         );
     }
 
-    function MultiSendERC20SameValue(
-        address _token,
-        uint256 _value,
-        address[] memory _users
-    )
-        public
-        payable
-        whenNotPaused
-        notZeroLength(_users.length)
-    {
-        require(_token != address(0), "Invalid token address");
-        uint256 fee = _calcFee();
-        PayFee(fee);
-        if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
-        IERC20(_token).transferFrom(msg.sender, address(this), _users.length * _value);
-        for (uint256 i; i < _users.length; i++) {
-            IERC20(_token).transfer(_users[i], _value);
-        }
-        uint256 remaining = IERC20(_token).balanceOf(address(this));
-        if(remaining != 0) {
-            IERC20(_token).transfer(msg.sender, remaining);
-        }
-        emit MultiTransferredERC20(
-            _token,
-            _users.length,
-            _users.length * _value
-        );
-    }
-
     function _calcFee() internal returns (uint256) {
         if (WhiteListAddress == address(0)) return 0;
         uint256 discount = IWhiteList(WhiteListAddress).Check(
