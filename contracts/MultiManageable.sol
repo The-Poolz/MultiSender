@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "poolz-helper-v2/contracts/FeeBaseHelper.sol";
-import "poolz-helper-v2/contracts/interfaces/IWhiteList.sol";
+import "@poolzfinance/poolz-helper-v2/contracts/FeeBaseHelper.sol";
+import "@poolzfinance/poolz-helper-v2/contracts/interfaces/IWhiteList.sol";
 
 /// @title all admin settings
 contract MultiManageable is FeeBaseHelper, Pausable {
