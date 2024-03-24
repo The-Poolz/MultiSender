@@ -20,6 +20,8 @@ contract MultiSender is MultiManageable {
     error InvalidEthAmount(uint requiredAmount);
     error FeeNotProvided(uint requiredFee);
     error EthTransferFail();
+    error ArrayZeroLength();
+    error InvalidTokenAddress();
 
     struct MultiSendData {
         address user;
@@ -27,28 +29,32 @@ contract MultiSender is MultiManageable {
     }
 
     modifier notZeroLength(uint256 _length) {
-        require(_length != 0, "array can't be zero length");
+        if (_length == 0) revert ArrayZeroLength();
+        _;
+    }
+
+    modifier validateToken(address _token) {
+        if (_token == address(0)) revert InvalidTokenAddress();
         _;
     }
 
     function MultiSendEth(
         MultiSendData[] calldata _multiSendData
     )
-        public
+        external
         payable
         whenNotPaused
         notZeroLength(_multiSendData.length)
     {
-        uint256 fee = _calcFee();
+        uint feeTaken = TakeFee();
         uint256 value = msg.value;
-        PayFee(fee);
-        if (fee > 0 && FeeToken == address(0)) value -= fee;
+        if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
         for (uint256 i; i < _multiSendData.length; i++) {
             value -= _multiSendData[i].amount;
             (bool success, ) = _multiSendData[i].user.call{value: _multiSendData[i].amount}("");
             if (!success) revert EthTransferFail();
         }
-        emit MultiTransferredETH(_multiSendData.length, msg.value - fee);
+        emit MultiTransferredETH(_multiSendData.length, msg.value - feeTaken);
     }
 
     function MultiSendERC20Indirect(
@@ -56,15 +62,12 @@ contract MultiSender is MultiManageable {
         uint256 _totalAmount,
         MultiSendData[] calldata _multiSendData
     )
-        public
-        payable
+        external
         whenNotPaused
+        validateToken(_token)
         notZeroLength(_multiSendData.length)
     {
-        require(_token != address(0), "Invalid token address");
-        uint256 fee = _calcFee();
-        PayFee(fee);
-        if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
+        TakeFee();
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
@@ -85,15 +88,12 @@ contract MultiSender is MultiManageable {
         uint256 _totalAmount,
         MultiSendData[] calldata _multiSendData
     )
-        public
-        payable
+        external
         whenNotPaused
+        validateToken(_token)
         notZeroLength(_multiSendData.length)
     {
-        require(_token != address(0), "Invalid token address");
-        uint256 fee = _calcFee();
-        PayFee(fee);
-        if (FeeToken == address(0) && msg.value != fee) revert FeeNotProvided(fee);
+        TakeFee();
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
@@ -108,21 +108,4 @@ contract MultiSender is MultiManageable {
         );
     }
 
-    function _calcFee() internal returns (uint256) {
-        if (WhiteListAddress == address(0)) return 0;
-        uint256 discount = IWhiteList(WhiteListAddress).Check(
-            msg.sender,
-            WhiteListId
-        );
-        if (discount < Fee) {
-            IWhiteList(WhiteListAddress).Register(
-                msg.sender,
-                WhiteListId,
-                discount
-            );
-            return Fee - discount;
-        }
-        IWhiteList(WhiteListAddress).Register(msg.sender, WhiteListId, Fee);
-        return 0;
-    }
 }
