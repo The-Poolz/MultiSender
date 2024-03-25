@@ -22,6 +22,7 @@ contract MultiSender is MultiManageable {
     error EthTransferFail();
     error ArrayZeroLength();
     error InvalidTokenAddress();
+    error TotalMismatch();
 
     struct MultiSendData {
         address user;
@@ -36,15 +37,6 @@ contract MultiSender is MultiManageable {
     modifier validateToken(address _token) {
         if (_token == address(0)) revert InvalidTokenAddress();
         _;
-    }
-
-    modifier returnExtraTokens(address _tokenAddress) {
-        uint beforeBalance = IERC20(_tokenAddress).balanceOf(address(this));
-        _;
-        uint afterBalance = IERC20(_tokenAddress).balanceOf(address(this));
-        if(afterBalance > beforeBalance) {
-            IERC20(_tokenAddress).transfer(msg.sender, afterBalance - beforeBalance);
-        }
     }
 
     function MultiSendEth(
@@ -75,39 +67,41 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
-        returnExtraTokens(_token)
     {
         TakeFee();
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
+        uint256 totalAmount;
         for (uint256 i; i < _multiSendData.length; i++) {
+            totalAmount += _multiSendData[i].amount;
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
+        if (totalAmount != _totalAmount) revert TotalMismatch();
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            _totalAmount
+            totalAmount
         );
     }
     
     function MultiSendERC20Direct(
         address _token,
-        uint256 _totalAmount,
         MultiSendData[] calldata _multiSendData
     )
         external
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
-        returnExtraTokens(_token)
     {
         TakeFee();
+        uint256 totalAmount;
         for (uint256 i; i < _multiSendData.length; i++) {
+            totalAmount += _multiSendData[i].amount;
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            _totalAmount
+            totalAmount
         );
     }
 
