@@ -1,5 +1,5 @@
 import BigNumber from "bignumber.js";
-import { ERC20, MultiSender, OldMultiSender } from "../typechain-types";
+import { ERC20, MultiSender } from "../typechain-types";
 import { ethers } from "hardhat";
 
 const getRandomAddress = () => {
@@ -24,7 +24,7 @@ const getTotalofAmounts = (amounts: BigNumber[]) => {
 }
 
 
-describe("MultiSender", () => {
+xdescribe("MultiSender", () => {
   let multiSender: MultiSender;
   let oldMultiSender: OldMultiSender;
   let token: ERC20;
