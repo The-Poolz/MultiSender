@@ -38,6 +38,15 @@ contract MultiSender is MultiManageable {
         _;
     }
 
+    modifier returnExtraTokens(address _tokenAddress) {
+        uint beforeBalance = IERC20(_tokenAddress).balanceOf(address(this));
+        _;
+        uint afterBalance = IERC20(_tokenAddress).balanceOf(address(this));
+        if(afterBalance > beforeBalance) {
+            IERC20(_tokenAddress).transfer(msg.sender, afterBalance - beforeBalance);
+        }
+    }
+
     function MultiSendEth(
         MultiSendData[] calldata _multiSendData
     )
@@ -66,13 +75,13 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
+        returnExtraTokens(_token)
     {
         TakeFee();
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        returnExtraTokens(_token);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
@@ -89,25 +98,17 @@ contract MultiSender is MultiManageable {
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
+        returnExtraTokens(_token)
     {
         TakeFee();
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
-        returnExtraTokens(_token);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
             _totalAmount
         );
-    }
-
-    function returnExtraTokens(address _tokenAddress) private {
-        if(_tokenAddress == FeeToken) return;
-        uint256 remaining = IERC20(_tokenAddress).balanceOf(address(this));
-        if(remaining != 0) {
-            IERC20(_tokenAddress).transfer(msg.sender, remaining);
-        }
     }
 
 }
