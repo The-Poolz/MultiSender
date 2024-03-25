@@ -72,10 +72,7 @@ contract MultiSender is MultiManageable {
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        uint256 remaining = IERC20(_token).balanceOf(address(this));
-        if(remaining != 0) {
-            IERC20(_token).transfer(msg.sender, remaining);
-        }
+        returnExtraTokens(_token);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
@@ -97,15 +94,20 @@ contract MultiSender is MultiManageable {
         for (uint256 i; i < _multiSendData.length; i++) {
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
-        uint256 remaining = IERC20(_token).balanceOf(address(this));
-        if(remaining != 0) {
-            IERC20(_token).transfer(msg.sender, remaining);
-        }
+        returnExtraTokens(_token);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
             _totalAmount
         );
+    }
+
+    function returnExtraTokens(address _tokenAddress) private {
+        if(_tokenAddress == FeeToken) return;
+        uint256 remaining = IERC20(_tokenAddress).balanceOf(address(this));
+        if(remaining != 0) {
+            IERC20(_tokenAddress).transfer(msg.sender, remaining);
+        }
     }
 
 }
