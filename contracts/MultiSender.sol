@@ -22,7 +22,7 @@ contract MultiSender is MultiManageable {
     error EthTransferFail();
     error ArrayZeroLength();
     error InvalidTokenAddress();
-    error TotalMismatch();
+    error TotalMismatch(bool isParamHigher);
 
     struct MultiSendData {
         address user;
@@ -70,16 +70,16 @@ contract MultiSender is MultiManageable {
     {
         TakeFee();
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
-        uint256 totalAmount;
+        uint256 sum;
         for (uint256 i; i < _multiSendData.length; i++) {
-            totalAmount += _multiSendData[i].amount;
+            sum += _multiSendData[i].amount;
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        if (totalAmount != _totalAmount) revert TotalMismatch();
+        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            totalAmount
+            sum
         );
     }
     
