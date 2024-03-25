@@ -8,14 +8,14 @@
   },
   "scripts": {
     "prettier": "prettier --write /contracts/**/.sol && prettier --write test/",
-    "test": "nodemon --watch contracts --watch test -e ts,sol --exec npx hardhat test ./test/1_MultiSender.ts"
+    "test-watch": "nodemon --watch contracts --watch test -e ts,sol --exec npx hardhat test ./test/1_MultiSender.ts"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/test-helpers": "^0.5.15",
-    "@poolzfinance/poolz-helper-v2": "^2.4.0",
+    "@poolzfinance/poolz-helper-v2": "^2.4.1",
     "@truffle/hdwallet-provider": "^1.1.0",
     "babel-polyfill": "^6.26.0",
     "babel-preset-es2015": "^6.18.0",
