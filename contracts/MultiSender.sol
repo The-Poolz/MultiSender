@@ -22,6 +22,7 @@ contract MultiSender is MultiManageable {
     error EthTransferFail();
     error ArrayZeroLength();
     error InvalidTokenAddress();
+    error TotalMismatch(bool isParamHigher);
 
     struct MultiSendData {
         address user;
@@ -69,20 +70,21 @@ contract MultiSender is MultiManageable {
     {
         TakeFee();
         IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
+        uint256 sum;
         for (uint256 i; i < _multiSendData.length; i++) {
+            sum += _multiSendData[i].amount;
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        returnExtraTokens(_token);
+        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            _totalAmount
+            sum
         );
     }
     
     function MultiSendERC20Direct(
         address _token,
-        uint256 _totalAmount,
         MultiSendData[] calldata _multiSendData
     )
         external
@@ -91,23 +93,16 @@ contract MultiSender is MultiManageable {
         notZeroLength(_multiSendData.length)
     {
         TakeFee();
+        uint256 totalAmount;
         for (uint256 i; i < _multiSendData.length; i++) {
+            totalAmount += _multiSendData[i].amount;
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
-        returnExtraTokens(_token);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            _totalAmount
+            totalAmount
         );
-    }
-
-    function returnExtraTokens(address _tokenAddress) private {
-        if(_tokenAddress == FeeToken) return;
-        uint256 remaining = IERC20(_tokenAddress).balanceOf(address(this));
-        if(remaining != 0) {
-            IERC20(_tokenAddress).transfer(msg.sender, remaining);
-        }
     }
 
 }
