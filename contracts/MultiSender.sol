@@ -8,7 +8,7 @@ import "./MultiManageable.sol";
 
 /// @title main multi transfer settings
 /// @author The-Poolz contract team
-contract MultiSender is MultiManageable {
+contract MultiSenderV2 is MultiManageable {
     event MultiTransferredERC20(
         address token,
         uint256 userCount,
