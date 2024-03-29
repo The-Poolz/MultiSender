@@ -3,115 +3,106 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
-import "poolz-helper-v2/contracts/Array.sol";
+import "@poolzfinance/poolz-helper-v2/contracts/Array.sol";
 import "./MultiManageable.sol";
 
 /// @title main multi transfer settings
 /// @author The-Poolz contract team
-contract MultiSender is MultiManageable {
+contract MultiSenderV2 is MultiManageable {
     event MultiTransferredERC20(
         address token,
         uint256 userCount,
         uint256 totalAmount
     );
+
     event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
 
-    constructor() {
-        UserLimit = 500;
-    }
+    error InvalidEthAmount(uint requiredAmount);
+    error FeeNotProvided(uint requiredFee);
+    error EthTransferFail();
+    error ArrayZeroLength();
+    error InvalidTokenAddress();
+    error TotalMismatch(bool isParamHigher);
 
-    modifier checkArrLength(uint256 _userLength, uint256 _balancesLength) {
-        require(_userLength == _balancesLength, "invalid input data!");
-        _;
+    struct MultiSendData {
+        address user;
+        uint amount;
     }
 
     modifier notZeroLength(uint256 _length) {
-        require(_length != 0, "array can't be zero length");
+        if (_length == 0) revert ArrayZeroLength();
         _;
     }
 
-    modifier checkUserLimit(uint256 _userLength) {
-        require(UserLimit >= _userLength, "Invalid user limit");
+    modifier validateToken(address _token) {
+        if (_token == address(0)) revert InvalidTokenAddress();
         _;
     }
 
     function MultiSendEth(
-        address payable[] calldata _users,
-        uint256[] calldata _balances
+        MultiSendData[] calldata _multiSendData
     )
-        public
+        external
         payable
         whenNotPaused
-        checkArrLength(_users.length, _balances.length)
-        notZeroLength(_users.length)
-        checkUserLimit(_users.length)
+        notZeroLength(_multiSendData.length)
     {
-        uint256 fee = _calcFee();
+        uint feeTaken = TakeFee();
         uint256 value = msg.value;
-        PayFee(fee);
-        if (fee > 0 && FeeToken == address(0)) value -= fee;
-        uint256 amount = Array.getArraySum(_balances);
-        require(
-            value == amount,
-            string.concat(
-                "Reqired Amount=",
-                Strings.toString(amount),
-                " Fee=",
-                Strings.toString(fee)
-            )
-        );
-        for (uint256 i; i < _users.length; i++) {
-            _users[i].transfer(_balances[i]);
+        if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
+        for (uint256 i; i < _multiSendData.length; i++) {
+            value -= _multiSendData[i].amount;
+            (bool success, ) = _multiSendData[i].user.call{value: _multiSendData[i].amount}("");
+            if (!success) revert EthTransferFail();
         }
-        emit MultiTransferredETH(_users.length, amount);
+        emit MultiTransferredETH(_multiSendData.length, msg.value - feeTaken);
     }
 
-    function MultiSendERC20(
+    function MultiSendERC20Indirect(
         address _token,
-        address[] memory _users,
-        uint256[] calldata _balances
+        uint256 _totalAmount,
+        MultiSendData[] calldata _multiSendData
     )
-        public
-        payable
+        external
         whenNotPaused
-        checkArrLength(_users.length, _balances.length)
-        notZeroLength(_users.length)
-        checkUserLimit(_users.length)
+        validateToken(_token)
+        notZeroLength(_multiSendData.length)
     {
-        require(_token != address(0), "Invalid token address");
-        uint256 fee = _calcFee();
-        PayFee(fee);
-        if (FeeToken == address(0)) {
-            require(
-                msg.value == fee,
-                string.concat("Reqired ETH fee=", Strings.toString(fee))
-            );
+        TakeFee();
+        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
+        uint256 sum;
+        for (uint256 i; i < _multiSendData.length; i++) {
+            sum += _multiSendData[i].amount;
+            IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        for (uint256 i; i < _users.length; i++) {
-            IERC20(_token).transferFrom(msg.sender, _users[i], _balances[i]);
+        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
+        emit MultiTransferredERC20(
+            _token,
+            _multiSendData.length,
+            sum
+        );
+    }
+    
+    function MultiSendERC20Direct(
+        address _token,
+        MultiSendData[] calldata _multiSendData
+    )
+        external
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_multiSendData.length)
+    {
+        TakeFee();
+        uint256 totalAmount;
+        for (uint256 i; i < _multiSendData.length; i++) {
+            totalAmount += _multiSendData[i].amount;
+            IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
         emit MultiTransferredERC20(
             _token,
-            _users.length,
-            Array.getArraySum(_balances)
+            _multiSendData.length,
+            totalAmount
         );
     }
 
-    function _calcFee() internal returns (uint256) {
-        if (WhiteListAddress == address(0)) return 0;
-        uint256 discount = IWhiteList(WhiteListAddress).Check(
-            msg.sender,
-            WhiteListId
-        );
-        if (discount < Fee) {
-            IWhiteList(WhiteListAddress).Register(
-                msg.sender,
-                WhiteListId,
-                discount
-            );
-            return Fee - discount;
-        }
-        IWhiteList(WhiteListAddress).Register(msg.sender, WhiteListId, Fee);
-        return 0;
-    }
 }
