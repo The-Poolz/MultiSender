@@ -17,8 +17,6 @@ contract MultiSenderV2 is MultiManageable {
 
     event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
 
-    error InvalidEthAmount(uint requiredAmount);
-    error FeeNotProvided(uint requiredFee);
     error EthTransferFail();
     error ArrayZeroLength();
     error InvalidTokenAddress();
@@ -39,6 +37,12 @@ contract MultiSenderV2 is MultiManageable {
         _;
     }
 
+    function _takeEthFee() private returns (uint newValue) {
+        uint feeTaken = TakeFee();
+        newValue = msg.value;
+        if (feeTaken > 0 && FeeToken == address(0)) newValue -= feeTaken;
+    }
+
     function MultiSendEth(
         MultiSendData[] calldata _multiSendData
     )
@@ -47,9 +51,7 @@ contract MultiSenderV2 is MultiManageable {
         whenNotPaused
         notZeroLength(_multiSendData.length)
     {
-        uint feeTaken = TakeFee();
-        uint256 value = msg.value;
-        if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
+        uint value = _takeEthFee();
         uint sum;
         for (uint256 i; i < _multiSendData.length; i++) {
             sum += _multiSendData[i].amount;
@@ -69,9 +71,7 @@ contract MultiSenderV2 is MultiManageable {
         whenNotPaused
         notZeroLength(_users.length)
     {
-        uint feeTaken = TakeFee();
-        uint256 value = msg.value;
-        if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
+        uint value = _takeEthFee();
         uint sum = _amount * _users.length;
         if (value != sum) revert TotalMismatch( value > sum );
         for (uint256 i; i < _users.length; i++) {
