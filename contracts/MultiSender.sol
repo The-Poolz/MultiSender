@@ -50,12 +50,35 @@ contract MultiSenderV2 is MultiManageable {
         uint feeTaken = TakeFee();
         uint256 value = msg.value;
         if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
+        uint sum;
         for (uint256 i; i < _multiSendData.length; i++) {
-            value -= _multiSendData[i].amount;
+            sum += _multiSendData[i].amount;
             (bool success, ) = _multiSendData[i].user.call{value: _multiSendData[i].amount}("");
             if (!success) revert EthTransferFail();
         }
-        emit MultiTransferredETH(_multiSendData.length, msg.value - feeTaken);
+        if (value != sum) revert TotalMismatch( value > sum );
+        emit MultiTransferredETH(_multiSendData.length, sum);
+    }
+
+    function MultiSendEthSameValue(
+        address[] calldata _users,
+        uint _amount
+    )
+        external
+        payable
+        whenNotPaused
+        notZeroLength(_users.length)
+    {
+        uint feeTaken = TakeFee();
+        uint256 value = msg.value;
+        if (feeTaken > 0 && FeeToken == address(0)) value -= feeTaken;
+        uint sum = _amount * _users.length;
+        if (value != sum) revert TotalMismatch( value > sum );
+        for (uint256 i; i < _users.length; i++) {
+            (bool success, ) = _users[i].call{value: _amount}("");
+            if (!success) revert EthTransferFail();
+        }
+        emit MultiTransferredETH(_users.length, sum);
     }
 
     function MultiSendERC20Indirect(
@@ -64,6 +87,7 @@ contract MultiSenderV2 is MultiManageable {
         MultiSendData[] calldata _multiSendData
     )
         external
+        payable
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
@@ -82,26 +106,73 @@ contract MultiSenderV2 is MultiManageable {
             sum
         );
     }
+
+    function MultiSendERC20IndirectSameValue(
+        address _token,
+        address[] calldata _users,
+        uint _amount
+    )
+        external
+        payable
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_users.length)
+    {
+        TakeFee();
+        uint sum = _amount * _users.length;
+        IERC20(_token).transferFrom(msg.sender, address(this), sum);
+        for (uint256 i; i < _users.length; i++) {
+            IERC20(_token).transfer(_users[i], _amount);
+        }
+        emit MultiTransferredERC20(
+            _token,
+            _users.length,
+            sum
+        );
+    }
     
     function MultiSendERC20Direct(
         address _token,
         MultiSendData[] calldata _multiSendData
     )
         external
+        payable
         whenNotPaused
         validateToken(_token)
         notZeroLength(_multiSendData.length)
     {
         TakeFee();
-        uint256 totalAmount;
+        uint256 sum;
         for (uint256 i; i < _multiSendData.length; i++) {
-            totalAmount += _multiSendData[i].amount;
+            sum += _multiSendData[i].amount;
             IERC20(_token).transferFrom(msg.sender, _multiSendData[i].user, _multiSendData[i].amount);
         }
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
-            totalAmount
+            sum
+        );
+    }
+
+    function MultiSendERC20DirectSameValue(
+        address _token,
+        address[] calldata _users,
+        uint _amount
+    )
+        external
+        payable
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_users.length)
+    {
+        TakeFee();
+        for (uint256 i; i < _users.length; i++) {
+            IERC20(_token).transferFrom(msg.sender, _users[i], _amount);
+        }
+        emit MultiTransferredERC20(
+            _token,
+            _users.length,
+             _amount * _users.length
         );
     }
 
