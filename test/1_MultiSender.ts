@@ -1,12 +1,12 @@
 import { ethers } from "hardhat"
 import { ERC20, MultiSenderV2 } from "../typechain-types"
 import { expect } from "chai"
+import allUsers from "./mockData.json"
 const ZERO_ADDRESS: string = '0x0000000000000000000000000000000000000000';
 
 describe("MultiSenderV2", () => {
     let instance: MultiSenderV2
     let token: ERC20
-    const amount = 1000
 
     beforeEach(async () => {
         instance = await ethers.deployContract("MultiSenderV2")
@@ -14,54 +14,60 @@ describe("MultiSenderV2", () => {
     })
 
     it("should transfer ETH to multiple accounts", async function () {
-        const [deployer, ...accounts] = await ethers.getSigners();
-        const addresses = accounts.map(acc => acc.address).splice(0, 10);
-        const eth = ethers.parseEther("1");
-        const users = Array(10).fill(eth).map((amount, index) => ({
-            user: accounts[index].address,
-            amount: amount,
-        }))
-        const defaultBal = await ethers.provider.getBalance(accounts[0].address);
-        await instance.MultiSendEth(users,  { value: ethers.parseEther("10") });
-        for (let i = 0; i < addresses.length; i++) {
-          let bal = await ethers.provider.getBalance(accounts[i].address);
-          expect(bal).to.equal(defaultBal + eth);
+        const [deployer] = await ethers.getSigners();
+        const users = allUsers.slice(0,100).map((user) => ({
+            user: user.address,
+            amount: BigInt(user.amount) / BigInt(10000),
+        }));
+        const beforeBal = await ethers.provider.getBalance(deployer.address);
+        const total = users.reduce((acc, user) => acc + user.amount, 0n);
+        const tx = await instance.connect(deployer).MultiSendEth(users, { value: total });
+        const receipt = await tx.wait();
+        const afterBal = await ethers.provider.getBalance(deployer.address);
+        for (let i = 0; i < users.length; i++) {
+          let bal = await ethers.provider.getBalance(users[i].user);
+          expect(bal).to.equal(users[i].amount);
         }
+        const gasUsed = receipt?.gasUsed ? BigInt(receipt.gasUsed) * tx.gasPrice : 0n;
+        expect(afterBal).to.equal(beforeBal - total - gasUsed);
     });
 
     it("should transfer ERC20 tokens to multiple accounts directly", async function () {
-        const [deployer, ...accounts] = await ethers.getSigners();    
-        const amount = ethers.parseUnits("1", 18); 
-        await token.connect(deployer).approve(instance.getAddress(), amount * BigInt(accounts.length) );
-        const users = accounts.map((acc, index) => ({
-            user: acc.address,
-            amount: amount,
+        const [deployer] = await ethers.getSigners();
+        const beforeBal = await token.balanceOf(deployer.address);
+        const users = allUsers.slice(0,100).map((user) => ({
+            user: user.address,
+            amount: BigInt(user.amount) / BigInt(10000),
         }));
         const total = users.reduce((acc, user) => acc + user.amount, 0n);
+        await token.connect(deployer).approve(instance.getAddress(), total);
         await instance.connect(deployer).MultiSendERC20Direct(token.getAddress(), users );
-    
-        for (let account of accounts) {
-          let bal = await token.balanceOf(account.address);
-          expect(bal).to.equal(amount);
+        const afterBal = await token.balanceOf(deployer.address);
+        for (let user of users) {
+          let bal = await token.balanceOf(user.user);
+          expect(bal).to.equal(user.amount);
         }
+        expect(afterBal).to.equal(beforeBal - total);
     });
 
     it("should transfer ERC20 tokens to multiple accounts indirectly", async function () {
-        const [deployer, ...accounts] = await ethers.getSigners();    
-        const amount = ethers.parseUnits("1", 18); 
-        await token.connect(deployer).approve(instance.getAddress(), amount * BigInt(accounts.length) );
-        const users = accounts.map((acc) => ({
-            user: acc.address,
-            amount: amount,
+        const [deployer] = await ethers.getSigners();
+        const beforeBal = await token.balanceOf(deployer.address);
+        const users = allUsers.slice(0,100).map((user) => ({
+            user: user.address,
+            amount: BigInt(user.amount) / BigInt(10000),
         }));
         const total = users.reduce((acc, user) => acc + user.amount, 0n);
+        await token.connect(deployer).approve(instance.getAddress(), total);
         await instance.connect(deployer).MultiSendERC20Indirect(token.getAddress(), total, users );
-    
-        for (let account of accounts) {
-          let bal = await token.balanceOf(account.address);
-          expect(bal).to.equal(amount);
+        const afterBal = await token.balanceOf(deployer.address);
+        for (let user of users) {
+          let bal = await token.balanceOf(user.user);
+          expect(bal).to.equal(user.amount);
         }
+        expect(afterBal).to.equal(beforeBal - total);
     });
+
 
     describe("Revert Tests", () => {
 
