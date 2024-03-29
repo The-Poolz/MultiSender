@@ -68,18 +68,73 @@ describe("MultiSenderV2", () => {
         expect(afterBal).to.equal(beforeBal - total);
     });
 
+    it("should multisend eth of same value", async () => {
+        const [deployer] = await ethers.getSigners();
+        const users = allUsers.slice(100,200).map((user) => (user.address));
+        const amount = 10000n;
+        const beforeBal = await ethers.provider.getBalance(deployer.address);
+        const total = amount * BigInt(users.length);
+        const tx = await instance.connect(deployer).MultiSendEthSameValue(users, amount, { value: total });
+        const receipt = await tx.wait();
+        const afterBal = await ethers.provider.getBalance(deployer.address);
+        for(let user of users) {
+            let bal = await ethers.provider.getBalance(user);
+            expect(bal).to.equal(amount);
+        }
+        const gasUsed = receipt?.gasUsed ? BigInt(receipt.gasUsed) * tx.gasPrice : 0n;
+        expect(afterBal).to.equal(beforeBal - total - gasUsed);
+    })
+
+    it("should multi send ERC20 of same value Directly", async function () {
+        const [deployer] = await ethers.getSigners();
+        const beforeBal = await token.balanceOf(deployer.address);
+        const users = allUsers.slice(100,200).map((user) => (user.address));
+        const amount = ethers.parseUnits("100", 18);
+        const total = amount * BigInt(users.length);
+        await token.connect(deployer).approve(instance.getAddress(), total);
+        await instance.connect(deployer).MultiSendERC20DirectSameValue(token.getAddress(), users, amount );
+        const afterBal = await token.balanceOf(deployer.address);
+        for (let user of users) {
+          let bal = await token.balanceOf(user);
+          expect(bal).to.equal(amount);
+        }
+        expect(afterBal).to.equal(beforeBal - total);
+    });
+
+    it("should multi send ERC20 of same value Indirectly", async function () {
+        const [deployer] = await ethers.getSigners();
+        const beforeBal = await token.balanceOf(deployer.address);
+        const users = allUsers.slice(100,200).map((user) => (user.address));
+        const amount = ethers.parseUnits("100", 18);
+        const total = amount * BigInt(users.length);
+        await token.connect(deployer).approve(instance.getAddress(), total);
+        await instance.connect(deployer).MultiSendERC20IndirectSameValue(token.getAddress(), users, amount );
+        const afterBal = await token.balanceOf(deployer.address);
+        for (let user of users) {
+          let bal = await token.balanceOf(user);
+          expect(bal).to.equal(amount);
+        }
+        expect(afterBal).to.equal(beforeBal - total);
+    });
+
 
     describe("Revert Tests", () => {
 
-        it("should revert zero address erc transfer", async () => {
+        it("should revert zero address ERC20 transfer", async () => {
             await expect(instance.MultiSendERC20Direct(ZERO_ADDRESS, [])).to.be.revertedWithCustomError(instance, "InvalidTokenAddress")
+            await expect(instance.MultiSendERC20Indirect(ZERO_ADDRESS, 1000, [])).to.be.revertedWithCustomError(instance, "InvalidTokenAddress")
+            await expect(instance.MultiSendERC20DirectSameValue(ZERO_ADDRESS, [], 100)).to.be.revertedWithCustomError(instance, "InvalidTokenAddress")
+            await expect(instance.MultiSendERC20IndirectSameValue(ZERO_ADDRESS, [], 100)).to.be.revertedWithCustomError(instance, "InvalidTokenAddress")
         })
 
 
         it("should revert zero length array", async () => {
             await expect(instance.MultiSendEth([])).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
+            await expect(instance.MultiSendEthSameValue([], 100)).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
             await expect(instance.MultiSendERC20Direct(token.getAddress(), [])).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
             await expect(instance.MultiSendERC20Indirect(token.getAddress(), 0, [])).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
+            await expect(instance.MultiSendERC20DirectSameValue(token.getAddress(), [], 100)).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
+            await expect(instance.MultiSendERC20IndirectSameValue(token.getAddress(), [], 100)).to.be.revertedWithCustomError(instance, "ArrayZeroLength")
         })
 
         it("should revert ERC20 indirect transfer when total higher than sum", async () => {
@@ -115,6 +170,9 @@ describe("MultiSenderV2", () => {
             await expect(instance.MultiSendEth([])).to.be.revertedWith("Pausable: paused")
             await expect(instance.MultiSendERC20Direct(token.getAddress(), [])).to.be.revertedWith("Pausable: paused")
             await expect(instance.MultiSendERC20Indirect(token.getAddress(), 0, [])).to.be.revertedWith("Pausable: paused")
+            await expect(instance.MultiSendEthSameValue([], 100)).to.be.revertedWith("Pausable: paused")
+            await expect(instance.MultiSendERC20DirectSameValue(token.getAddress(), [], 100)).to.be.revertedWith("Pausable: paused")
+            await expect(instance.MultiSendERC20IndirectSameValue(token.getAddress(), [], 100)).to.be.revertedWith("Pausable: paused")
             await instance.Unpause()
             expect(await instance.paused()).to.be.false
         })
