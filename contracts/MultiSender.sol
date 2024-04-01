@@ -37,7 +37,7 @@ contract MultiSenderV2 is MultiManageable {
         _;
     }
 
-    function _takeEthFee() private returns (uint newValue) {
+    function _getValueAfterFee() private returns (uint newValue) {
         uint feeTaken = TakeFee();
         newValue = msg.value;
         if (feeTaken > 0 && FeeToken == address(0)) newValue -= feeTaken;
@@ -51,7 +51,7 @@ contract MultiSenderV2 is MultiManageable {
         whenNotPaused
         notZeroLength(_multiSendData.length)
     {
-        uint value = _takeEthFee();
+        uint value = _getValueAfterFee();
         uint sum;
         for (uint256 i; i < _multiSendData.length; i++) {
             sum += _multiSendData[i].amount;
@@ -71,7 +71,7 @@ contract MultiSenderV2 is MultiManageable {
         whenNotPaused
         notZeroLength(_users.length)
     {
-        uint value = _takeEthFee();
+        uint value = _getValueAfterFee();
         uint sum = _amount * _users.length;
         if (value != sum) revert TotalMismatch( value > sum );
         for (uint256 i; i < _users.length; i++) {
@@ -176,4 +176,5 @@ contract MultiSenderV2 is MultiManageable {
         );
     }
 
+    
 }
