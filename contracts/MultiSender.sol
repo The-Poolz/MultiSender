@@ -176,5 +176,85 @@ contract MultiSenderV2 is MultiManageable {
         );
     }
 
+    function MultiSendERC20DirectGrouped(
+        address _token,
+        address[][] calldata _userGroups,
+        uint[] calldata _amounts
+    )
+        external
+        payable
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_userGroups.length)
+        notZeroLength(_amounts.length)
+    {
+        TakeFee();
+        uint sum;
+        for (uint256 i; i < _userGroups.length; i++) {
+            sum += _amounts[i] * _userGroups[i].length;
+            for (uint256 j; j < _userGroups[i].length; j++) {
+                IERC20(_token).transferFrom(msg.sender, _userGroups[i][j], _amounts[i]);
+            }
+        }
+        emit MultiTransferredERC20(
+            _token,
+            _userGroups.length,
+            sum
+        );
+    }
+
+    function MultiSendERC20IndirectGrouped(
+        address _token,
+        uint256 _totalAmount,
+        address[][] calldata _userGroups,
+        uint[] calldata _amounts
+    )
+        external
+        payable
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_userGroups.length)
+        notZeroLength(_amounts.length)
+    {
+        TakeFee();
+        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
+        uint sum;
+        for (uint256 i; i < _userGroups.length; i++) {
+            sum += _amounts[i] * _userGroups[i].length;
+            for (uint256 j; j < _userGroups[i].length; j++) {
+                IERC20(_token).transfer(_userGroups[i][j], _amounts[i]);
+            }
+        }
+        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
+        emit MultiTransferredERC20(
+            _token,
+            _userGroups.length,
+            sum
+        );
+    }
+
+    function MultiSendETHGrouped(
+        address[][] calldata _userGroups,
+        uint[] calldata _amounts
+    )
+        external
+        payable
+        whenNotPaused
+        notZeroLength(_userGroups.length)
+        notZeroLength(_amounts.length)
+    {
+        uint value = _getValueAfterFee();
+        uint sum;
+        for (uint256 i; i < _userGroups.length; i++) {
+            sum += _amounts[i] * _userGroups[i].length;
+            for (uint256 j; j < _userGroups[i].length; j++) {
+                (bool success, ) = _userGroups[i][j].call{value: _amounts[i]}("");
+                if (!success) revert EthTransferFail();
+            }
+        }
+        if (value != sum) revert TotalMismatch( value > sum );
+        emit MultiTransferredETH(_userGroups.length, sum);
+    }
+
     
 }
