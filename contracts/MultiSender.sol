@@ -9,41 +9,8 @@ import "./MultiManageable.sol";
 /// @title main multi transfer settings
 /// @author The-Poolz contract team
 contract MultiSenderV2 is MultiManageable {
-    event MultiTransferredERC20(
-        address token,
-        uint256 userCount,
-        uint256 totalAmount
-    );
 
-    event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
-
-    error EthTransferFail();
-    error ArrayZeroLength();
-    error InvalidTokenAddress();
-    error TotalMismatch(bool isParamHigher);
-
-    struct MultiSendData {
-        address user;
-        uint amount;
-    }
-
-    modifier notZeroLength(uint256 _length) {
-        if (_length == 0) revert ArrayZeroLength();
-        _;
-    }
-
-    modifier validateToken(address _token) {
-        if (_token == address(0)) revert InvalidTokenAddress();
-        _;
-    }
-
-    function _getValueAfterFee() private returns (uint newValue) {
-        uint feeTaken = TakeFee();
-        newValue = msg.value;
-        if (feeTaken > 0 && FeeToken == address(0)) newValue -= feeTaken;
-    }
-
-    function MultiSendEth(
+    function MultiSendETH(
         MultiSendData[] calldata _multiSendData
     )
         external
@@ -55,14 +22,13 @@ contract MultiSenderV2 is MultiManageable {
         uint sum;
         for (uint256 i; i < _multiSendData.length; i++) {
             sum += _multiSendData[i].amount;
-            (bool success, ) = _multiSendData[i].user.call{value: _multiSendData[i].amount}("");
-            if (!success) revert EthTransferFail();
+            _sendETH(_multiSendData[i].user, _multiSendData[i].amount);
         }
         if (value != sum) revert TotalMismatch( value > sum );
         emit MultiTransferredETH(_multiSendData.length, sum);
     }
 
-    function MultiSendEthSameValue(
+    function MultiSendETHSameValue(
         address[] calldata _users,
         uint _amount
     )
@@ -75,10 +41,31 @@ contract MultiSenderV2 is MultiManageable {
         uint sum = _amount * _users.length;
         if (value != sum) revert TotalMismatch( value > sum );
         for (uint256 i; i < _users.length; i++) {
-            (bool success, ) = _users[i].call{value: _amount}("");
-            if (!success) revert EthTransferFail();
+            _sendETH(_users[i], _amount);
         }
         emit MultiTransferredETH(_users.length, sum);
+    }
+
+    function MultiSendETHGrouped(
+        address[][] calldata _userGroups,
+        uint[] calldata _amounts
+    )
+        external
+        payable
+        whenNotPaused
+        notZeroLength(_userGroups.length)
+        notZeroLength(_amounts.length)
+    {
+        uint value = _getValueAfterFee();
+        uint sum;
+        for (uint256 i; i < _userGroups.length; i++) {
+            sum += _amounts[i] * _userGroups[i].length;
+            for (uint256 j; j < _userGroups[i].length; j++) {
+                _sendETH(_userGroups[i][j], _amounts[i]);
+            }
+        }
+        if (value != sum) revert TotalMismatch( value > sum );
+        emit MultiTransferredETH(_userGroups.length, sum);
     }
 
     function MultiSendERC20Indirect(
@@ -93,8 +80,8 @@ contract MultiSenderV2 is MultiManageable {
         notZeroLength(_multiSendData.length)
     {
         TakeFee();
-        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
         uint256 sum;
+        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
         for (uint256 i; i < _multiSendData.length; i++) {
             sum += _multiSendData[i].amount;
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
@@ -127,6 +114,36 @@ contract MultiSenderV2 is MultiManageable {
         emit MultiTransferredERC20(
             _token,
             _users.length,
+            sum
+        );
+    }
+
+    function MultiSendERC20IndirectGrouped(
+        address _token,
+        uint256 _totalAmount,
+        address[][] calldata _userGroups,
+        uint[] calldata _amounts
+    )
+        external
+        payable
+        whenNotPaused
+        validateToken(_token)
+        notZeroLength(_userGroups.length)
+        notZeroLength(_amounts.length)
+    {
+        TakeFee();
+        uint sum;
+        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
+        for (uint256 i; i < _userGroups.length; i++) {
+            sum += _amounts[i] * _userGroups[i].length;
+            for (uint256 j; j < _userGroups[i].length; j++) {
+                IERC20(_token).transfer(_userGroups[i][j], _amounts[i]);
+            }
+        }
+        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
+        emit MultiTransferredERC20(
+            _token,
+            _userGroups.length,
             sum
         );
     }
@@ -202,59 +219,4 @@ contract MultiSenderV2 is MultiManageable {
             sum
         );
     }
-
-    function MultiSendERC20IndirectGrouped(
-        address _token,
-        uint256 _totalAmount,
-        address[][] calldata _userGroups,
-        uint[] calldata _amounts
-    )
-        external
-        payable
-        whenNotPaused
-        validateToken(_token)
-        notZeroLength(_userGroups.length)
-        notZeroLength(_amounts.length)
-    {
-        TakeFee();
-        IERC20(_token).transferFrom(msg.sender, address(this), _totalAmount);
-        uint sum;
-        for (uint256 i; i < _userGroups.length; i++) {
-            sum += _amounts[i] * _userGroups[i].length;
-            for (uint256 j; j < _userGroups[i].length; j++) {
-                IERC20(_token).transfer(_userGroups[i][j], _amounts[i]);
-            }
-        }
-        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
-        emit MultiTransferredERC20(
-            _token,
-            _userGroups.length,
-            sum
-        );
-    }
-
-    function MultiSendETHGrouped(
-        address[][] calldata _userGroups,
-        uint[] calldata _amounts
-    )
-        external
-        payable
-        whenNotPaused
-        notZeroLength(_userGroups.length)
-        notZeroLength(_amounts.length)
-    {
-        uint value = _getValueAfterFee();
-        uint sum;
-        for (uint256 i; i < _userGroups.length; i++) {
-            sum += _amounts[i] * _userGroups[i].length;
-            for (uint256 j; j < _userGroups[i].length; j++) {
-                (bool success, ) = _userGroups[i][j].call{value: _amounts[i]}("");
-                if (!success) revert EthTransferFail();
-            }
-        }
-        if (value != sum) revert TotalMismatch( value > sum );
-        emit MultiTransferredETH(_userGroups.length, sum);
-    }
-
-    
 }
