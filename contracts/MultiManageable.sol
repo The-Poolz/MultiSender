@@ -17,7 +17,7 @@ contract MultiManageable is FeeBaseHelper, Pausable {
     error ETHTransferFail(address user, uint amount);
     error ArrayZeroLength();
     error InvalidTokenAddress();
-    error TotalMismatch(bool isParamHigher);
+    error TotalMismatch(uint amountProvided, uint amountRequired);
 
     struct MultiSendData {
         address user;

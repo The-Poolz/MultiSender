@@ -242,7 +242,7 @@ describe("MultiSenderV2", () => {
                 amount: amount,
             }));
             const total = amount * BigInt(users.length);
-            await expect(instance.MultiSendERC20Indirect(token.getAddress(), total + 1n, users)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(true)
+            await expect(instance.MultiSendERC20Indirect(token.getAddress(), total + 1n, users)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total + 1n, total)
         })
 
         it("should revert ERC20 indirect transfer when total lower than sum", async () => {
@@ -255,7 +255,7 @@ describe("MultiSenderV2", () => {
             const total = amount * BigInt(users.length);
             await token.connect(deployer).transfer(instance, total); // manually sending tokens to contract to increase its balance
             await token.connect(deployer).approve(instance.getAddress(), ethers.MaxUint256 );
-            await expect(instance.MultiSendERC20Indirect(token.getAddress(), total - 1n, users)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(false)
+            await expect(instance.MultiSendERC20Indirect(token.getAddress(), total - 1n, users)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total - 1n, total)
         })
 
         it("should revert ERC20 Indirect Grouped transfer when Total Mismatch", async () => {
@@ -271,9 +271,9 @@ describe("MultiSenderV2", () => {
             )
             const amounts = [ethers.parseUnits("1", 18), ethers.parseUnits("2", 18), ethers.parseUnits("3", 18), ethers.parseUnits("4", 18), ethers.parseUnits("5", 18)]
             const total = userGroups.reduce((acc, user, i) => acc + amounts[i] * BigInt(user.length), 0n);
-            await expect(instance.MultiSendERC20IndirectGrouped(token.getAddress(), total + 1n, userGroups, amounts)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(true)
+            await expect(instance.MultiSendERC20IndirectGrouped(token.getAddress(), total + 1n, userGroups, amounts)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total + 1n, total)
             await token.connect(deployer).transfer(instance, 1n); // manually sending tokens to contract to increase its balance
-            await expect(instance.MultiSendERC20IndirectGrouped(token.getAddress(), total - 1n, userGroups, amounts)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(false)
+            await expect(instance.MultiSendERC20IndirectGrouped(token.getAddress(), total - 1n, userGroups, amounts)).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total - 1n, total)
         })
 
         it("should revert ETH transfer when total higher than sum", async () => {
@@ -283,7 +283,7 @@ describe("MultiSenderV2", () => {
                 amount: amount,
             }));
             const total = amount * BigInt(users.length);
-            await expect(instance.MultiSendETH(users, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(true)
+            await expect(instance.MultiSendETH(users, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total + 1n, total)
             await expect(instance.MultiSendETH(users, { value: total - 1n })).to.be.revertedWithCustomError(instance, "ETHTransferFail")
         })
 
@@ -291,8 +291,8 @@ describe("MultiSenderV2", () => {
             const users = allUsers.slice(100,200).map((user) => (user.address));
             const amount = 10000n;
             const total = amount * BigInt(users.length);
-            await expect(instance.MultiSendETHSameValue(users, amount, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(true)
-            await expect(instance.MultiSendETHSameValue(users, amount, { value: total - 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(false)
+            await expect(instance.MultiSendETHSameValue(users, amount, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total + 1n, total)
+            await expect(instance.MultiSendETHSameValue(users, amount, { value: total - 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total - 1n, total)
         })
 
         it("should revert ETH Grouped transfer when Total Mismatch", async () => {
@@ -306,10 +306,9 @@ describe("MultiSenderV2", () => {
             )
             const amounts = [10000n, 20000n, 30000n, 40000n, 50000n]
             const total = userGroups.reduce((acc, user, i) => acc + amounts[i] * BigInt(user.length), 0n);
-            await expect(instance.MultiSendETHGrouped(userGroups, amounts, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(true)
+            await expect(instance.MultiSendETHGrouped(userGroups, amounts, { value: total + 1n })).to.be.revertedWithCustomError(instance, "TotalMismatch").withArgs(total + 1n, total)
             await expect(instance.MultiSendETHGrouped(userGroups, amounts, { value: total - 1n })).to.be.revertedWithCustomError(instance, "ETHTransferFail")
         })
-
     })
 
     describe("MultiManageable", () => {

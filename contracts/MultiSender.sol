@@ -24,7 +24,7 @@ contract MultiSenderV2 is MultiManageable {
             sum += _multiSendData[i].amount;
             _sendETH(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        if (value != sum) revert TotalMismatch( value > sum );
+        if (value != sum) revert TotalMismatch(value, sum);
         emit MultiTransferredETH(_multiSendData.length, sum);
     }
 
@@ -39,7 +39,7 @@ contract MultiSenderV2 is MultiManageable {
     {
         uint value = _getValueAfterFee();
         uint sum = _amount * _users.length;
-        if (value != sum) revert TotalMismatch( value > sum );
+        if (value != sum) revert TotalMismatch(value, sum);
         for (uint256 i; i < _users.length; i++) {
             _sendETH(_users[i], _amount);
         }
@@ -64,7 +64,7 @@ contract MultiSenderV2 is MultiManageable {
                 _sendETH(_userGroups[i][j], _amounts[i]);
             }
         }
-        if (value != sum) revert TotalMismatch( value > sum );
+        if (value != sum) revert TotalMismatch(value, sum);
         emit MultiTransferredETH(_userGroups.length, sum);
     }
 
@@ -86,7 +86,7 @@ contract MultiSenderV2 is MultiManageable {
             sum += _multiSendData[i].amount;
             IERC20(_token).transfer(_multiSendData[i].user, _multiSendData[i].amount);
         }
-        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
+        if (sum != _totalAmount) revert TotalMismatch(_totalAmount,  sum);
         emit MultiTransferredERC20(
             _token,
             _multiSendData.length,
@@ -140,7 +140,7 @@ contract MultiSenderV2 is MultiManageable {
                 IERC20(_token).transfer(_userGroups[i][j], _amounts[i]);
             }
         }
-        if (sum != _totalAmount) revert TotalMismatch( _totalAmount > sum );
+        if (sum != _totalAmount) revert TotalMismatch(_totalAmount, sum);
         emit MultiTransferredERC20(
             _token,
             _userGroups.length,
