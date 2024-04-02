@@ -16,7 +16,7 @@ contract MultiManageable is FeeBaseHelper, Pausable {
 
     error ETHTransferFail(address user, uint amount);
     error ArrayZeroLength();
-    error InvalidTokenAddress();
+    error NoZeroAddress();
     error TotalMismatch(uint amountProvided, uint amountRequired);
 
     struct MultiSendData {
@@ -29,8 +29,8 @@ contract MultiManageable is FeeBaseHelper, Pausable {
         _;
     }
 
-    modifier validateToken(address _token) {
-        if (_token == address(0)) revert InvalidTokenAddress();
+    modifier notZeroAddress(address _address) {
+        if (_address == address(0)) revert NoZeroAddress();
         _;
     }
 

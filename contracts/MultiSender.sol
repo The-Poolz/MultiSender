@@ -76,7 +76,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_multiSendData.length)
     {
         TakeFee();
@@ -102,7 +102,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_users.length)
     {
         TakeFee();
@@ -127,7 +127,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_userGroups.length)
         notZeroLength(_amounts.length)
     {
@@ -155,7 +155,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_multiSendData.length)
     {
         TakeFee();
@@ -179,7 +179,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_users.length)
     {
         TakeFee();
@@ -201,7 +201,7 @@ contract MultiSenderV2 is MultiManageable {
         external
         payable
         whenNotPaused
-        validateToken(_token)
+        notZeroAddress(_token)
         notZeroLength(_userGroups.length)
         notZeroLength(_amounts.length)
     {

@@ -210,7 +210,7 @@ describe("MultiSenderV2", () => {
         })
 
         it("should revert zero address ERC20 transfer", async () => {
-            const failString = "InvalidTokenAddress"
+            const failString = "NoZeroAddress"
             await expect(instance.MultiSendERC20Direct(ZERO_ADDRESS, [])).to.be.revertedWithCustomError(instance, failString)
             await expect(instance.MultiSendERC20Indirect(ZERO_ADDRESS, 1000, [])).to.be.revertedWithCustomError(instance, failString)
             await expect(instance.MultiSendERC20DirectSameValue(ZERO_ADDRESS, [], 100)).to.be.revertedWithCustomError(instance, failString)
