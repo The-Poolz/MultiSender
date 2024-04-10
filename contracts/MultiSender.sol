@@ -10,9 +10,8 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
         address _token,
         uint256 _totalAmount,
         MultiSendData[] calldata _multiSendData
-    ) external payable erc20FullCheck(_token) {
+    ) external payable erc20FullCheck(_token) returns (uint256 sum) {
         uint length = _notZero(_multiSendData.length);
-        uint256 sum;
         _getERC20(_token, _totalAmount);
         for (uint256 i; i < length; i++) {
             sum += _sendERC20(_token, _multiSendData[i]);
@@ -40,8 +39,13 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
         uint256 _totalAmount,
         address[][] calldata _userGroups,
         uint[] calldata _amounts
-    ) external payable erc20FullCheck(_token) notZero(_amounts.length) {
-        uint sum;
+    )
+        external
+        payable
+        erc20FullCheck(_token)
+        notZero(_amounts.length)
+        returns (uint256 sum)
+    {
         _getERC20(_token, _totalAmount);
         uint length = _notZero(_userGroups.length);
         for (uint256 i; i < length; i++) {

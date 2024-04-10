@@ -9,8 +9,7 @@ contract MultiSenderERC20Direct is MultiSenderETH {
     function MultiSendERC20Direct(
         address _token,
         MultiSendData[] calldata _multiSendData
-    ) external payable erc20FullCheck(_token) {
-        uint256 sum;
+    ) external payable erc20FullCheck(_token) returns (uint256 sum) {
         uint length = _notZero(_multiSendData.length);
         for (uint256 i; i < length; i++) {
             MultiSendData calldata data = _multiSendData[i];
@@ -29,11 +28,7 @@ contract MultiSenderERC20Direct is MultiSenderETH {
             address user = _users[i];
             _sendERC20From(_token, user, _amount);
         }
-        emit MultiTransferredERC20(
-            _token,
-            length,
-            _amount * length
-        );
+        emit MultiTransferredERC20(_token, length, _amount * length);
     }
 
     function MultiSendERC20DirectGrouped(
@@ -45,8 +40,8 @@ contract MultiSenderERC20Direct is MultiSenderETH {
         payable
         erc20FullCheck(_token)
         notZero(_amounts.length)
+        returns (uint256 sum)
     {
-        uint sum;
         uint length = _notZero(_userGroups.length);
         for (uint256 i; i < length; i++) {
             uint length2 = _notZero(_userGroups[i].length);

@@ -8,8 +8,7 @@ import "./MultiManageable.sol";
 contract MultiSenderETH is MultiManageable {
     function MultiSendETH(
         MultiSendData[] calldata _multiSendData
-    ) external payable whenNotPaused {
-        uint sum;
+    ) external payable whenNotPaused returns (uint256 sum) {
         uint length = _notZero(_multiSendData.length);
         for (uint256 i; i < length; i++) {
             MultiSendData calldata data = _multiSendData[i];
@@ -35,8 +34,13 @@ contract MultiSenderETH is MultiManageable {
     function MultiSendETHGrouped(
         address[][] calldata _userGroups,
         uint[] calldata _amounts
-    ) external payable whenNotPaused notZero(_amounts.length) {
-        uint sum;
+    )
+        external
+        payable
+        whenNotPaused
+        notZero(_amounts.length)
+        returns (uint256 sum)
+    {
         uint length = _notZero(_userGroups.length);
         for (uint256 i; i < length; i++) {
             uint length2 = _notZero(_userGroups[i].length);
