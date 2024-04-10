@@ -2,8 +2,6 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
-import "@poolzfinance/poolz-helper-v2/contracts/Array.sol";
 import "./MultiManageable.sol";
 
 /// @title main multi transfer settings
