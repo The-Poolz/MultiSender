@@ -25,7 +25,8 @@ jobs:
       - name: test
         run: npx hardhat coverage
 
-      - name: Code Cove
-        uses: codecov/codecov-action@v4
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
         with:
-          token: ${{ secrets.CODECOV_TOKEN }} # required
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: The-Poolz/MultiSender
