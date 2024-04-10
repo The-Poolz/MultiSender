@@ -44,8 +44,8 @@ contract MultiSenderERC20Direct is MultiSenderETH {
         external
         payable
         erc20FullCheck(_token)
+        notZero(_amounts.length)
     {
-        _notZero(_amounts.length);
         uint sum;
         uint length = _notZero(_userGroups.length);
         for (uint256 i; i < length; i++) {

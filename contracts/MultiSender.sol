@@ -18,7 +18,7 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
             sum += _sendERC20(_token, _multiSendData[i]);
         }
         _validateEqual(sum, _totalAmount);
-        emit MultiTransferredERC20(_token, _multiSendData.length, sum);
+        emit MultiTransferredERC20(_token, length, sum);
     }
 
     function MultiSendERC20IndirectSameValue(
