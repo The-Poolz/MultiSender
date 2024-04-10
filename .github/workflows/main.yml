@@ -19,6 +19,9 @@ jobs:
         with:
           node-version: "20.9.0"
 
+      - name: install
+        run: npm install
+
       - name: test
         run: npx hardhat coverage
 
