@@ -312,8 +312,24 @@ describe("MultiSenderV2", () => {
     })
 
     describe("MultiManageable", () => {
+        it("should revert when Pause is called by a non-owner/non-governor", async () => {
+            const signers = await ethers.getSigners();
+            const nonOwner = signers[1]; // assuming the first signer is the default owner
+            await expect(instance.connect(nonOwner).Pause())
+                .to.be.revertedWith("Authorization Error");
+        });
+    
+        it("should revert when Unpause is called by a non-owner/non-governor", async () => {
+            // First pause the contract as the owner to make sure it's in the right state
+            const signers = await ethers.getSigners();
+            const nonOwner = signers[1]; // assuming the first signer is the default owner
+            const owner = signers[0];
+            await instance.connect(owner).Pause();
+            await expect(instance.connect(nonOwner).Unpause())
+                .to.be.revertedWith("Authorization Error");
+        });
+
         it("should pause/unpause contract", async () => {
-            await instance.Pause()
             expect(await instance.paused()).to.be.true
             const failString = "Pausable: paused"
             await expect(instance.MultiSendETH([])).to.be.revertedWith(failString)
