@@ -25,20 +25,8 @@ abstract contract MultiManageable is FeeBaseHelper, Pausable {
         uint amount;
     }
 
-    modifier erc20FullCheck2(
-        address _token,
-        uint value1,
-        uint value2
-    ) {
+    modifier erc20FullCheck(address _token) {
         _baseStartUp(_token);
-        _notZero(value1);
-        _notZero(value2);
-        _;
-    }
-
-    modifier erc20FullCheck1(address _token, uint value1) {
-        _baseStartUp(_token);
-        _notZero(value1);
         _;
     }
 
@@ -52,8 +40,11 @@ abstract contract MultiManageable is FeeBaseHelper, Pausable {
         TakeFee();
     }
 
-    function _notZero(uint256 _number) internal pure {
+    function _notZero(
+        uint256 _number
+    ) internal pure returns (uint256 _sameNumber) {
         if (_number == 0) revert ArrayZeroLength();
+        _sameNumber = _number;
     }
 
     function _validateValueAfterFee(uint _value) internal {
