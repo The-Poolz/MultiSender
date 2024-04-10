@@ -35,7 +35,7 @@ abstract contract MultiManageable is FeeBaseHelper, Pausable {
         _;
     }
 
-    function _baseStartUp(address _token) internal whenNotPaused {
+    function _baseStartUp(address _token) private whenNotPaused {
         if (_token == address(0)) revert NoZeroAddress();
         TakeFee();
     }
@@ -52,7 +52,7 @@ abstract contract MultiManageable is FeeBaseHelper, Pausable {
         _validateEqual(_value, msg.value - feeTaken);
     }
 
-    function _validateEqual(uint _value, uint _value2) internal {
+    function _validateEqual(uint _value, uint _value2) internal pure {
         if (_value != _value2) revert TotalMismatch(_value2, _value);
     }
 
