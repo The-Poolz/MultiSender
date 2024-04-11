@@ -14,7 +14,8 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
         uint length = _notZero(_multiSendData.length);
         _getERC20(_token, _totalAmount);
         for (uint256 i; i < length; i++) {
-            sum += _sendERC20(_token, _multiSendData[i]);
+            MultiSendData calldata data = _multiSendData[i];
+            sum += _sendERC20(_token, data);
         }
         _validateEqual(sum, _totalAmount);
         emit MultiTransferredERC20(_token, length, sum);
@@ -29,7 +30,8 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
         uint sum = _amount * length;
         _getERC20(_token, sum);
         for (uint256 i; i < length; i++) {
-            _sendERC20(_token, _users[i], _amount);
+            address user = _users[i];
+            _sendERC20(_token, user, _amount);
         }
         emit MultiTransferredERC20(_token, length, sum);
     }

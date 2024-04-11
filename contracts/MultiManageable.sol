@@ -8,12 +8,12 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 /// @title all admin settings
 abstract contract MultiManageable is FeeBaseHelper, Pausable {
     event MultiTransferredERC20(
-        address token,
-        uint256 userCount,
-        uint256 totalAmount
+        address indexed token,
+        uint256 indexed userCount,
+        uint256 indexed totalAmount
     );
 
-    event MultiTransferredETH(uint256 userCount, uint256 totalAmount);
+    event MultiTransferredETH(uint256 indexed userCount, uint256 indexed totalAmount);
 
     error ETHTransferFail(address user, uint amount);
     error ArrayZeroLength();
