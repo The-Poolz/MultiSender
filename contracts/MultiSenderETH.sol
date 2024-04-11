@@ -3,9 +3,16 @@ pragma solidity ^0.8.0;
 
 import "./MultiManageable.sol";
 
-/// @title main multi transfer settings
+/// @title Main multi transfer settings contract
+/// @dev Extends `MultiManageable` to enable multi-sending of ETH with various utilities.
 /// @author The-Poolz contract team
 contract MultiSenderETH is MultiManageable {
+
+    /// @notice Sends ETH to multiple addresses with different amounts.
+    /// @dev Iterates over the `_multiSendData` array, sending ETH to each specified address.
+    /// Requires the contract not to be paused.
+    /// @param _multiSendData An array of `MultiSendData` structs, each containing an address and the amount of ETH to send.
+    /// @return sum The total amount of ETH sent.
     function MultiSendETH(
         MultiSendData[] calldata _multiSendData
     ) external payable whenNotPaused returns (uint256 sum) {
@@ -18,6 +25,11 @@ contract MultiSenderETH is MultiManageable {
         emit MultiTransferredETH(length, sum);
     }
 
+    /// @notice Sends the same amount of ETH to multiple addresses.
+    /// @dev Iterates over the `_users` array, sending the specified `_amount` of ETH to each.
+    /// Requires the contract not to be paused.
+    /// @param _users An array of addresses to receive ETH.
+    /// @param _amount The amount of ETH to send to each address.
     function MultiSendETHSameValue(
         address[] calldata _users,
         uint _amount
@@ -31,6 +43,12 @@ contract MultiSenderETH is MultiManageable {
         emit MultiTransferredETH(length, _amount * length);
     }
 
+    /// @notice Sends variable amounts of ETH to groups of addresses.
+    /// @dev For each group in `_userGroups`, sends the corresponding amount from `_amounts` to each address in the group.
+    /// Requires the contract not to be paused and the `_amounts` array to not be zero in length.
+    /// @param _userGroups An array of address arrays, each representing a group of users.
+    /// @param _amounts An array of amounts of ETH to send, corresponding to each group in `_userGroups`.
+    /// @return sum The total amount of ETH sent to all groups.
     function MultiSendETHGrouped(
         address[][] calldata _userGroups,
         uint[] calldata _amounts
