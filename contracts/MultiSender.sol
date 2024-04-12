@@ -21,9 +21,12 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
     ) external payable erc20FullCheck(_token) returns (uint256 sum) {
         uint length = _notZero(_multiSendData.length);
         _getERC20(_token, _totalAmount);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             MultiSendData calldata data = _multiSendData[i];
             sum += _sendERC20(_token, data);
+            unchecked {
+                ++i;
+            }
         }
         _validateEqual(sum, _totalAmount);
         emit MultiTransferredERC20(_token, length, sum);
@@ -42,9 +45,12 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
         uint length = _notZero(_users.length);
         uint sum = _amount * length;
         _getERC20(_token, sum);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             address user = _users[i];
             _sendERC20(_token, user, _amount);
+            unchecked{
+                ++i;
+            }
         }
         emit MultiTransferredERC20(_token, length, sum);
     }
@@ -70,13 +76,19 @@ contract MultiSenderV2 is MultiSenderERC20Direct {
     {
         _getERC20(_token, _totalAmount);
         uint length = _notZero(_userGroups.length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             uint length2 = _notZero(_userGroups[i].length);
             sum += _amounts[i] * length2;
-            for (uint256 j; j < length2; j++) {
+            for (uint256 j; j < length2; ) {
                 address user = _userGroups[i][j];
                 uint amount = _amounts[i];
                 _sendERC20(_token, user, amount);
+                unchecked{
+                    ++j;
+                }
+            }
+            unchecked{
+                ++i;
             }
         }
         _validateEqual(sum, _totalAmount);

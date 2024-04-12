@@ -17,9 +17,12 @@ contract MultiSenderETH is MultiManageable {
         MultiSendData[] calldata _multiSendData
     ) external payable whenNotPaused returns (uint256 sum) {
         uint length = _notZero(_multiSendData.length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             MultiSendData calldata data = _multiSendData[i];
             sum += _sendETH(data);
+            unchecked {
+                ++i;
+            }
         }
         _validateValueAfterFee(sum);
         emit MultiTransferredETH(length, sum);
@@ -36,9 +39,12 @@ contract MultiSenderETH is MultiManageable {
     ) external payable whenNotPaused {
         uint length = _notZero(_users.length);
         _validateValueAfterFee(_amount * length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             address user = _users[i];
             _sendETH(user, _amount);
+            unchecked {
+                ++i;
+            }
         }
         emit MultiTransferredETH(length, _amount * length);
     }
@@ -60,13 +66,19 @@ contract MultiSenderETH is MultiManageable {
         returns (uint256 sum)
     {
         uint length = _notZero(_userGroups.length);
-        for (uint256 i; i < length; i++) {
+        for (uint256 i; i < length; ) {
             uint length2 = _notZero(_userGroups[i].length);
             sum += _amounts[i] * length2;
-            for (uint256 j; j < length2; j++) {
+            for (uint256 j; j < length2; ) {
                 address user = _userGroups[i][j];
                 uint amount = _amounts[i];
                 _sendETH(user, amount);
+                unchecked {
+                    ++j;
+                }
+            }
+            unchecked {
+                ++i;
             }
         }
         _validateValueAfterFee(sum);
