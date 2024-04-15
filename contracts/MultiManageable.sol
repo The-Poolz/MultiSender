@@ -32,12 +32,6 @@ abstract contract MultiManageable is FeeBaseHelper, Pausable {
         _;
     }
 
-    /// @notice Ensures the provided number is not zero
-    /// @dev Modifier that calls `_notZero` to check for non-zero values
-    modifier notZero(uint256 _number) {
-        _notZero(_number);
-        _;
-    }
 
     /// @notice Starts base operations, checks for paused state and zero address, and takes fee
     /// @dev Private function called by the `erc20FullCheck` modifier
