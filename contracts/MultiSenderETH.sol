@@ -48,40 +48,4 @@ contract MultiSenderETH is MultiManageable {
         }
         emit MultiTransferredETH(length, _amount * length);
     }
-
-    /// @notice Sends variable amounts of ETH to groups of addresses.
-    /// @dev For each group in `_userGroups`, sends the corresponding amount from `_amounts` to each address in the group.
-    /// Requires the contract not to be paused and the `_amounts` array to not be zero in length.
-    /// @param _userGroups An array of address arrays, each representing a group of users.
-    /// @param _amounts An array of amounts of ETH to send, corresponding to each group in `_userGroups`.
-    /// @return sum The total amount of ETH sent to all groups.
-    function MultiSendETHGrouped(
-        address[][] calldata _userGroups,
-        uint[] calldata _amounts
-    )
-        external
-        payable
-        whenNotPaused
-        notZero(_amounts.length)
-        returns (uint256 sum)
-    {
-        uint length = _notZero(_userGroups.length);
-        for (uint256 i; i < length; ) {
-            uint length2 = _notZero(_userGroups[i].length);
-            sum += _amounts[i] * length2;
-            for (uint256 j; j < length2; ) {
-                address user = _userGroups[i][j];
-                uint amount = _amounts[i];
-                _sendETH(user, amount);
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        _validateValueAfterFee(sum);
-        emit MultiTransferredETH(length, sum);
-    }
 }

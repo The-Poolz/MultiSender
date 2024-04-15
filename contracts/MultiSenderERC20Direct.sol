@@ -48,40 +48,4 @@ contract MultiSenderERC20Direct is MultiSenderETH {
         }
         emit MultiTransferredERC20(_token, length, _amount * length);
     }
-
-    /// @notice Sends varying amounts of an ERC20 token to multiple groups of addresses
-    /// @param _token The ERC20 token address to send
-    /// @param _userGroups An array of address arrays, each representing a group of recipients
-    /// @param _amounts An array of amounts corresponding to each group in `_userGroups`
-    /// @return sum The total amount of tokens sent
-    /// @dev Validates that `_amounts` length matches `_userGroups` length and emits a `MultiTransferredERC20` event upon completion
-    function MultiSendERC20DirectGrouped(
-        address _token,
-        address[][] calldata _userGroups,
-        uint[] calldata _amounts
-    )
-        external
-        payable
-        erc20FullCheck(_token)
-        notZero(_amounts.length)
-        returns (uint256 sum)
-    {
-        uint length = _notZero(_userGroups.length);
-        for (uint256 i; i < length; ) {
-            uint length2 = _notZero(_userGroups[i].length);
-            sum += _amounts[i] * length2;
-            for (uint256 j; j < length2; ) {
-                address user = _userGroups[i][j];
-                uint amount = _amounts[i];
-                _sendERC20From(_token, user, amount);
-                unchecked {
-                    ++j;
-                }
-            }
-            unchecked {
-                ++i;
-            }
-        }
-        emit MultiTransferredERC20(_token, length, sum);
-    }
 }
