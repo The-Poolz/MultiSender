@@ -8,7 +8,10 @@
   },
   "scripts": {
     "prettier": "prettier --write /contracts/**/.sol && prettier --write test/",
-    "test-watch": "nodemon --watch contracts --watch test -e ts,sol --exec npx hardhat test ./test/1_MultiSender.ts"
+    "test-watch": "nodemon --watch contracts --watch test -e ts,sol --exec npx hardhat test ./test/1_MultiSender.ts",
+    "coverage": "npx hardhat coverage",
+    "dashboardDeploy" : "npx hardhat run scripts/1_MultiSender.ts --network truffleDashboard",
+    "slither": "slither ."
   },
   "author": "",
   "license": "ISC",
